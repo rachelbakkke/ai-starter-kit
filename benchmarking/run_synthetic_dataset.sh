@@ -1,15 +1,19 @@
 #!/bin/bash
 # run_synthetic_dataset.sh
 
+# --model-names "Meta-Llama-3.1-70B-Instruct" \
+# --model-names "Meta-Llama-3.1-405B-Instruct" \
+# --model-names "Mixtral-8x7B-Instruct-v0.1" \
+
 python src/evaluator.py \
 --mode synthetic \
---model-names "llama3-8b llama3-70b	llama3-405b" \
+--model-names "Meta-Llama-3.1-70B-Instruct" \
 --results-dir "./data/results/llmperf" \
 --num-concurrent-requests 1 \
 --timeout 600 \
---num-input-tokens 1000 \
---num-output-tokens 1000 \
---num-requests 16 \
+--num-input-tokens 100 \
+--num-output-tokens 100 \
+--num-requests 1 \
 --llm-api sncloud
 
 # Notes:
