@@ -244,12 +244,13 @@ class SambaStudioAPI(BaseAPIEndpoint):
             stream_url = self.base_url
         else:
             if 'stream' in self.base_url:
-                stream_url = self.base_url.replace('stream/', '')
+                stream_url = self.base_url
             else:
                 if 'generic' in self.base_url:
                     stream_url = 'generic/stream'.join(self.base_url.split('generic'))
                 else:
-                    raise ValueError('Unsupported URL')
+                    stream_url = self.base_url
+                    # raise ValueError('Unsupported URL')
         return stream_url
 
     def _get_headers(self) -> Dict[str, str]:
@@ -259,7 +260,8 @@ class SambaStudioAPI(BaseAPIEndpoint):
         if 'openai' in self.base_url:  # SambaStudio compatible with OpenAI request
             return {'Authorization': f'Bearer {self.api_key}', 'Content-Type': 'application/json'}
         else:  # Regular SambaStudio request
-            return {'key': self.api_key}
+            # return {'key': self.api_key}
+            return {'Content-Type': 'application/json'}
 
     def _get_json_data(self, url: str) -> Dict[str, Any]:
         """Gets json body for API call
@@ -278,7 +280,8 @@ class SambaStudioAPI(BaseAPIEndpoint):
         if 'openai' in self.base_url:  # SambaStudio compatible with OpenAI data payload
             data = self._get_json_data_for_sambastudio_openai_compatible(prompt, sampling_params)
         else:  # Regular SambaStudio data payload
-            data = self._get_json_data_for_regular_sambastudio(url, prompt, sampling_params)
+            # data = self._get_json_data_for_regular_sambastudio(url, prompt, sampling_params)
+            data = self._get_json_data_for_sambastudio_openai_compatible(prompt, sampling_params)
 
         return data
 
@@ -349,11 +352,16 @@ class SambaStudioAPI(BaseAPIEndpoint):
         # Start measuring time
         metrics[common_metrics.REQ_START_TIME] = datetime.now().strftime('%H:%M:%S.%f')
         start_time = time.monotonic()
+        
+        # print(f'url {url}')
+        # print(f'headers {headers}')
+        # print(f'json_data {json_data}')
 
         if self.request_config.is_stream_mode:
             with requests.post(
                 url, headers=headers, json=json_data, stream=self.request_config.is_stream_mode
             ) as response:
+                # print(f'response {response.content}')
                 if response.status_code != 200:
                     error_details = response.json().get('error', 'No additional error details provided.')
                     raise Exception(f'Error: {response.status_code}, Details: {error_details}')
@@ -363,8 +371,11 @@ class SambaStudioAPI(BaseAPIEndpoint):
                         self._parse_sambastudio_openai_compatible_response(response, start_time)
                     )
                 else:  # Regular SambaStudio data payload
+                    # chunks_received, chunks_timings, response_dict, generated_text = (
+                    #     self._parse_regular_sambastudio_response(response, start_time, url)
+                    # )
                     chunks_received, chunks_timings, response_dict, generated_text = (
-                        self._parse_regular_sambastudio_response(response, start_time, url)
+                        self._parse_sambastudio_openai_compatible_response(response, start_time)
                     )
         else:
             # TODO: support non-streaming mode
@@ -403,22 +414,30 @@ class SambaStudioAPI(BaseAPIEndpoint):
         client = sseclient.SSEClient(response)
 
         for event in client.events():
+            # print(f'{event.data}\n')
             try:
                 # check streaming events before last stream returns DONE
                 if event.data != '[DONE]':
                     data = json.loads(event.data)
                     # if events don't contain "usage" key, which only shows up in stream returning
                     # performance metrics
-                    if data.get('usage') is None:
-                        # if streams still don't hit a finish reason
-                        if data['choices'][0]['finish_reason'] is None:
-                            # log s timings
-                            events_timings.append(time.monotonic() - event_start_time)
-                            event_start_time = time.monotonic()
-                            # concatenate streaming text pieces
-                            stream_content = data['choices'][0]['delta']['content']
-                            events_received.append(stream_content)
-                            generated_text += stream_content
+                    # if data.get('usage') is None:
+                    #     # if streams still don't hit a finish reason
+                    #     if data['choices'][0]['finish_reason'] is None:
+                    #         # log s timings
+                    #         events_timings.append(time.monotonic() - event_start_time)
+                    #         event_start_time = time.monotonic()
+                    #         # concatenate streaming text pieces
+                    #         stream_content = data['choices'][0]['delta']['content']
+                    #         events_received.append(stream_content)
+                    #         generated_text += stream_content
+                    events_timings.append(time.monotonic() - event_start_time)
+                    event_start_time = time.monotonic()
+                    # concatenate streaming text pieces
+                    if len(data['choices'])>0:
+                        stream_content = data['choices'][0]['delta']['content']
+                        events_received.append(stream_content)
+                        generated_text += stream_content
                     # process streaming chunk when performance usage is provided
                     else:
                         response_dict = data['usage']

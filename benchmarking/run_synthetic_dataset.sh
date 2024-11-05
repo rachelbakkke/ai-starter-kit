@@ -3,14 +3,14 @@
 
 python src/evaluator.py \
 --mode synthetic \
---model-names "llama3-8b llama3-70b	llama3-405b" \
+--model-names "meta-llama/Meta-Llama-3.1-70B-Instruct" \
 --results-dir "./data/results/llmperf" \
 --num-concurrent-requests 1 \
 --timeout 600 \
---num-input-tokens 1000 \
---num-output-tokens 1000 \
---num-requests 16 \
---llm-api sncloud
+--num-input-tokens 100 \
+--num-output-tokens 100 \
+--num-requests 1 \
+--llm-api sambastudio
 
 # Notes:
 # 1. For CoE Models, make sure to include the prefix "COE/" before each expert name.
