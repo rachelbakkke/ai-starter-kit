@@ -5,7 +5,13 @@ from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 from transformers import AutoTokenizer
 
-SAMBANOVA_URL = 'https://api.sambanova.ai/v1/chat/completions'
+# SAMBANOVA_URL = 'https://api.sambanova.ai/v1/chat/completions'
+# aramco regular
+# SAMBANOVA_URL = 'https://tdyqrdwpmmt8.cloud.snova.ai/v1/chat/completions'
+# aramco low power
+SAMBANOVA_URL = 'https://qrptrnuh9cmx.cloud.snova.ai/v1/chat/completions'
+
+
 NUM_RNG_ATTEMPTS = 10  # Unlikely to be used in practice: prevents eternal WHILE-loops
 MODEL_TYPE_IDENTIFIER = {
     'mistral': 'mistral',
